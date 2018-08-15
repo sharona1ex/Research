@@ -50,8 +50,8 @@ class Ofdm:
         
     def ofdm_simulate(self,codeword, channelResponse,SNRdb):       
         OFDM_data = np.zeros(self.pilotNum, dtype=complex)
-        print(self.pilotCar," pilotCar")
-        print(self.pilotValue," pilotValue type: ",type(self.pilotValue))
+        #print(self.pilotCar," pilotCar")
+        #print(self.pilotValue," pilotValue type: ",type(self.pilotValue))
         OFDM_data[self.pilotCar] = self.pilotValue.tolist()
         #print('ofdm_data :',len(OFDM_data))
         OFDM_time = self.IDFT(OFDM_data)
@@ -90,30 +90,30 @@ class Ofdm:
         #starting from 1 to skip the zeros added at the zeroth index
         for i in range(1,num+1):    
             Label = self.modulation(bits1[i])
-            print(Label)
+            #print(Label)
             Label = self.complexMap(Label)
-            print(np.shape(Label),np.shape(Final_label))
+            #print(np.shape(Label),np.shape(Final_label))
             Final_label = np.vstack((Final_label,Label))
         
         pilot_mag = np.abs(dist_pilot[1:]) 
         pilot_angle = np.angle(dist_pilot[1:])
-        print(np.shape(pilot_mag)," ",np.shape(pilot_angle)," ",np.shape(bits1[1:])," ",np.shape(signal_output[1:]))
+        #print(np.shape(pilot_mag)," ",np.shape(pilot_angle)," ",np.shape(bits1[1:])," ",np.shape(signal_output[1:]))
         
         pilot_mag = pilot_mag.tolist()
         pilot_angle = pilot_angle.tolist()
         bit_mag = np.abs(signal_output[1:]).tolist()
         bit_angle = np.angle(signal_output[1:]).tolist()
-        print(len(pilot_mag[0] + pilot_angle[0] + bit_mag[0] + bit_angle[0]))
+        #print(len(pilot_mag[0] + pilot_angle[0] + bit_mag[0] + bit_angle[0]))
         Features = np.zeros(self.P + payloadBits_per_OFDM)    
         
         for i in range(num):
             Features = np.vstack((Features,pilot_mag[i] + pilot_angle[i] + bit_mag[i] + bit_angle[i]))
             
         #***************************************************    
-        print(np.shape(Features[1:]))
+        #print(np.shape(Features[1:]))
         Features = Features[1:]
         Final_label = Final_label[1:]
-        print(np.shape(Final_label))
+        #print(np.shape(Final_label))
         #***************************************************
         #60:20:20 for train:test:cv
         #training set
@@ -155,13 +155,37 @@ class Ofdm:
     
         
 
+class multi_svm:
+    
+    def __init__(self,K,Kernel,Gamma,c):
+        self.clf_arr = []
+        for i in range(K):
+            self.clf_arr.append(svm.SVC(kernel = Kernel,gamma = Gamma,C = c))
+    
+    def train(self,Feature,Label):
+        i = 0
+        for clf in self.clf_arr:
+            clf.fit(Feature,Label[:,i])
+            i = i + 1
+            
+    def predict(self,Feature,Label):
+        i = 0
+        net_av_error = 0
+        av_error = []
+        for clf in self.clf_arr:
+            pred = clf.predict(Feature)
+            mat = confusion_matrix(Label[:,i],pred)
+            num_of_examples = len(Feature)
+            av_error.append((num_of_examples - sum([mat[i][i] for i in range(len(mat))]))/num_of_examples)
+            i = i + 1
+        net_av_error = sum(av_error)
+        return net_av_error,av_error
+            
+        
 
-
-#ofdm parameter setting
-#at 1<k<2 and p=2 works very good and error = 0%
-#at k=3 and p=2 error = 1.1%        
+#ofdm parameter setting       
 qam = 4
-K = 3
+K = 4
 CP = K//4
 P = 2
 if P%2 != 0:
@@ -189,54 +213,21 @@ channel_response = np.array([[0.3+0.3j,0,1],[1, 0, 0.3+0.3j],[4, 0, 0.2+6j]])
 m = 5000 # m mean number of examples
 
 #Ofdm object and data creation
+print("Data Creation...")
 myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
 [Feature_train,Label_train,Feature_test,Label_test,Feature_cv,Label_cv] = myOfdm.dataGen(m,channel_response,SNRdb)
 
-#Label_train = myOfdm.unify_label(Label_train)
-#Label_test = myOfdm.unify_label(Label_test)
-#Label_cv = myOfdm.unify_label(Label_cv)
-##carrier data separation
-#c1F_train = Feature_train[:,[0,1,2,3]]
-#c1L_train = Label_train[:,0]
-#c1F_test = Feature_test[:,[0,1,2,3]]
-#c1L_test = Label_test[:,0]
-print(np.shape(Label_train)," ",np.shape(Feature_train))
-#
+#print(np.shape(Label_train)," ",np.shape(Feature_train))
+#SVM parameters
+Kernel = 'rbf'
+Gamma = 1
+c = 5.5
 ## SVM model
-clf = svm.SVC(kernel='rbf',gamma=1.3,C=5.0)
-clf.fit(Feature_train,Label_train[:,0])
-
-pred = clf.predict(Feature_test)
-result_1 = confusion_matrix(Label_test[:,0],pred)
-print(result_1)
-[r,c] = np.shape(result_1)
-correct_sum = 0
-for i in range(r):
-    correct_sum += result_1[i][i]
-
-number_of_examples = len(Feature_test)
-error_sum = number_of_examples - correct_sum
-average_test_error = error_sum/number_of_examples
-print("Average test error:",average_test_error)
-
-#
-#
-##myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
-##bitset = np.random.binomial(n=1, p=0.5, size=(12, ))
-##print(bitset)
-##x = myOfdm.modulation(bitset)
-##c = myOfdm.complexMap(x)
-#
-#
-#    
-#    
-#    
-#    
-#    
-#    
-#
-#    
-#    
-#        
-#        
-#    
+print("Creating SVM models for each carrier...")
+mySVM = multi_svm(K,Kernel,Gamma,c)
+print("Training models...")
+mySVM.train(Feature_train,Label_train)
+print("Signal Reconstrucion test...")
+[Total_average_test_error, Average_test_error_of_individual_carrier] = mySVM.predict(Feature_test,Label_test)
+print("Total Average test error:",Total_average_test_error)
+print("Average test error of each carrier:",Average_test_error_of_individual_carrier)
