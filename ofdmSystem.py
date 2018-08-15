@@ -7,6 +7,7 @@ Created on Wed Aug 15 09:06:58 2018
 import numpy as np
 from math import log10
 from sklearn import svm
+from sklearn.metrics import confusion_matrix
 
 class Ofdm:
     
@@ -28,12 +29,14 @@ class Ofdm:
         #set of integers to simplify calculations
         real = np.real(z)
         img = np.imag(z)
-        comp = [[real[i],img[i]] for i in range(0,len(real))]
+        comp =[[real[i],img[i]] for i in range(0,len(real))]
         return np.array([self.complex_map[tuple(b)] for b in comp])
     
     def modulation(self,bits):
         mu_bits = bits.reshape(len(bits)//self.mu,self.mu)
-        return np.array([self.mod_map[tuple(b)]] for b in mu_bits.tolist())
+        x = np.array([[self.mod_map[tuple(b)]] for b in mu_bits.tolist()])
+        x = x.reshape(1,len(x))[0]
+        return x
     
     def addCP(self,OFDM_time):
         cp = OFDM_time[-self.CP:]               # take the last CP samples ...
@@ -48,8 +51,8 @@ class Ofdm:
     def ofdm_simulate(self,codeword, channelResponse,SNRdb):       
         OFDM_data = np.zeros(self.pilotNum, dtype=complex)
         print(self.pilotCar," pilotCar")
-        #print(list(self.pilotValue)," pilotValue type: ",type(self.pilotValue))
-        OFDM_data[self.pilotCar] = list(self.pilotValue.tolist())
+        print(self.pilotValue," pilotValue type: ",type(self.pilotValue))
+        OFDM_data[self.pilotCar] = self.pilotValue.tolist()
         #print('ofdm_data :',len(OFDM_data))
         OFDM_time = self.IDFT(OFDM_data)
         OFDM_withCP = self.addCP(OFDM_time)
@@ -86,7 +89,7 @@ class Ofdm:
         for i in range(1,num+1):    
             Label = self.modulation(bits1[i])
             print(Label)
-            Label = self.complex_map(Label)
+            Label = self.complexMap(Label)
             print(np.shape(Label),np.shape(Final_label))
             Final_label = np.vstack((Final_label,Label))
         
@@ -172,9 +175,37 @@ m = 5000 # m mean number of examples
 myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
 [Feature_train,Label_train,Feature_test,Label_test,Feature_cv,Label_cv] = myOfdm.dataGen(m,channel_response,SNRdb)
 
+
+#carrier data separation
+c1F_train = Feature_train[:,[0,1,2,3]]
+c1L_train = Label_train[:,0]
+c1F_test = Feature_test[:,[0,1,2,3]]
+c1L_test = Label_test[:,0]
+
 ## SVM model
-#clf = svm.SVC(kernel='rbf',gamma=0.01,C=5.0)
-#clf.fit(Feature_train,Label_train)
+clf = svm.SVC(kernel='rbf',gamma=0.01,C=5.0)
+clf.fit(c1F_train,c1L_train)
+
+pred = clf.predict(c1F_test)
+result_1 = confusion_matrix(c1L_test,pred)
+print(result_1)
+[r,c] = np.shape(result_1)
+correct_sum = 0
+for i in range(r):
+    correct_sum += result_1[i][i]
+
+number_of_examples = len(Feature_test)
+error_sum = number_of_examples - correct_sum
+average_test_error = error_sum/number_of_examples
+print("Average test error:",average_test_error)
+
+
+
+#myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
+#bitset = np.random.binomial(n=1, p=0.5, size=(12, ))
+#print(bitset)
+#x = myOfdm.modulation(bitset)
+#c = myOfdm.complexMap(x)
 
 
     
