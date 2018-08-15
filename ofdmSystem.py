@@ -8,6 +8,8 @@ import numpy as np
 from math import log10
 from sklearn import svm
 from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 class Ofdm:
     
@@ -181,6 +183,8 @@ class multi_svm:
         net_av_error = sum(av_error)
         return net_av_error,av_error
             
+
+    
         
 
 #ofdm parameter setting       
@@ -220,14 +224,45 @@ myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
 #print(np.shape(Label_train)," ",np.shape(Feature_train))
 #SVM parameters
 Kernel = 'rbf'
-Gamma = 1
-c = 5.5
+Gamma = [0.001,0.01,0.1,1.0,1.2,1.3,1.5,1.8,2.0,2.3,2.5,2.8,3.0]
+c = 5
+Carrier_error = []
+Total_error = []
+# best gamma is 0.1
 ## SVM model
-print("Creating SVM models for each carrier...")
-mySVM = multi_svm(K,Kernel,Gamma,c)
-print("Training models...")
-mySVM.train(Feature_train,Label_train)
-print("Signal Reconstrucion test...")
-[Total_average_test_error, Average_test_error_of_individual_carrier] = mySVM.predict(Feature_test,Label_test)
-print("Total Average test error:",Total_average_test_error)
-print("Average test error of each carrier:",Average_test_error_of_individual_carrier)
+#print("Creating SVM models for each carrier...")
+#mySVM = multi_svm(K,Kernel,Gamma,c)
+#print("Training models...")
+#mySVM.train(Feature_train,Label_train)
+#print("Signal Reconstrucion test...")
+#[Total_average_test_error, Average_test_error_of_individual_carrier] = mySVM.predict(Feature_test,Label_test)
+#print("Total Average test error:",Total_average_test_error)
+#print("Average test error of each carrier:",Average_test_error_of_individual_carrier)
+
+for g in Gamma:
+    print(".",end=".")
+    mySVM = multi_svm(K,Kernel,g,c)
+    mySVM.train(Feature_train,Label_train)
+    [Total_average_test_error, Average_test_error_of_individual_carrier] = mySVM.predict(Feature_test,Label_test)
+    Carrier_error.append(Average_test_error_of_individual_carrier)
+    Total_error.append(Total_average_test_error)
+    
+Carrier_error = np.array(Carrier_error)
+Carrier_error = Carrier_error.transpose()
+plotList = []
+labels = []
+for i in range(K):
+    f2 = interp1d(Gamma, Carrier_error[i], kind='cubic')
+    plotList.append(plt.plot(Gamma,Carrier_error[i],'o', Gamma,f2(Gamma),'--',label = 'Carrier'+str(i)))
+    labels.append('Carrier' + str(i))
+    
+
+
+plt.title('Relation of Error Rate with changing Gamma')
+plt.xlabel('Gamma')
+plt.ylabel('Error')
+plt.legend()            
+plt.show()
+            
+
+
