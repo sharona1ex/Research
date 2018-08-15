@@ -158,10 +158,12 @@ class Ofdm:
 
 
 #ofdm parameter setting
+#at 1<k<2 and p=2 works very good and error = 0%
+#at k=3 and p=2 error = 1.1%        
 qam = 4
-K = 3
+K = 2
 CP = K//4
-P = 4
+P = 2
 if P%2 != 0:
     P = P + 1 
 
@@ -201,7 +203,7 @@ Label_cv = myOfdm.unify_label(Label_cv)
 #print(np.shape(c1L_train)," ",np.shape(c1F_train))
 #
 ## SVM model
-clf = svm.SVC(kernel='rbf',gamma=0.01,C=5.0)
+clf = svm.SVC(kernel='rbf',gamma=1,C=5.0)
 clf.fit(Feature_train,Label_train)
 
 pred = clf.predict(Feature_test)
