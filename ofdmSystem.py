@@ -82,7 +82,9 @@ class Ofdm:
             dpilot,signal = self.ofdm_simulate(bitset,channel_response[np.random.randint(0,len(channel_response))],SNRdb)   
             dist_pilot = np.vstack((dist_pilot,dpilot))
             bits1 = np.vstack((bits1,bitset)) 
-            signal_output = np.vstack((signal_output,signal)) 
+            signal_output = np.vstack((signal_output,signal))
+            #print(np.shape(bits1)," ",np.shape(signal_output))
+            
         
         Final_label = np.zeros(self.K)
         #starting from 1 to skip the zeros added at the zeroth index
@@ -135,18 +137,31 @@ class Ofdm:
         noise = np.sqrt(sigma2/2) * (np.random.randn(*convolved.shape)+1j*np.random.randn(*convolved.shape))
         return convolved + noise
     
+    def unify_label(self,label):
+        l = []
+        [m,n] = np.shape(label)
+        for i in range(m):
+            mul = 10**(n-1)
+            sum1 = 0
+            for j in range(n):
+                sum1 = sum1 + label[i][j]*mul
+                mul /= 10
+            l.append(sum1)
+        return np.array(l)      
+    
     @staticmethod
     def IDFT(OFDM_data):
         return np.fft.ifft(OFDM_data)
-
     
+        
+
 
 
 #ofdm parameter setting
 qam = 4
-K = 1
+K = 3
 CP = K//4
-P = 2
+P = 4
 if P%2 != 0:
     P = P + 1 
 
@@ -175,19 +190,22 @@ m = 5000 # m mean number of examples
 myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
 [Feature_train,Label_train,Feature_test,Label_test,Feature_cv,Label_cv] = myOfdm.dataGen(m,channel_response,SNRdb)
 
-
-#carrier data separation
-c1F_train = Feature_train[:,[0,1,2,3]]
-c1L_train = Label_train[:,0]
-c1F_test = Feature_test[:,[0,1,2,3]]
-c1L_test = Label_test[:,0]
-
+Label_train = myOfdm.unify_label(Label_train)
+Label_test = myOfdm.unify_label(Label_test)
+Label_cv = myOfdm.unify_label(Label_cv)
+##carrier data separation
+#c1F_train = Feature_train[:,[0,1,2,3]]
+#c1L_train = Label_train[:,0]
+#c1F_test = Feature_test[:,[0,1,2,3]]
+#c1L_test = Label_test[:,0]
+#print(np.shape(c1L_train)," ",np.shape(c1F_train))
+#
 ## SVM model
 clf = svm.SVC(kernel='rbf',gamma=0.01,C=5.0)
-clf.fit(c1F_train,c1L_train)
+clf.fit(Feature_train,Label_train)
 
-pred = clf.predict(c1F_test)
-result_1 = confusion_matrix(c1L_test,pred)
+pred = clf.predict(Feature_test)
+result_1 = confusion_matrix(Label_test,pred)
 print(result_1)
 [r,c] = np.shape(result_1)
 correct_sum = 0
@@ -199,24 +217,24 @@ error_sum = number_of_examples - correct_sum
 average_test_error = error_sum/number_of_examples
 print("Average test error:",average_test_error)
 
-
-
-#myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
-#bitset = np.random.binomial(n=1, p=0.5, size=(12, ))
-#print(bitset)
-#x = myOfdm.modulation(bitset)
-#c = myOfdm.complexMap(x)
-
-
-    
-    
-    
-    
-    
-    
-
-    
-    
-        
-        
-    
+#
+#
+##myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
+##bitset = np.random.binomial(n=1, p=0.5, size=(12, ))
+##print(bitset)
+##x = myOfdm.modulation(bitset)
+##c = myOfdm.complexMap(x)
+#
+#
+#    
+#    
+#    
+#    
+#    
+#    
+#
+#    
+#    
+#        
+#        
+#    
