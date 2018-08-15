@@ -48,8 +48,8 @@ class Ofdm:
     def ofdm_simulate(self,codeword, channelResponse,SNRdb):       
         OFDM_data = np.zeros(self.pilotNum, dtype=complex)
         print(self.pilotCar," pilotCar")
-        print(self.pilotValue," pilotValue type: ",type(self.pilotValue))
-        OFDM_data[self.pilotCar] = self.pilotValue.tolist()
+        #print(list(self.pilotValue)," pilotValue type: ",type(self.pilotValue))
+        OFDM_data[self.pilotCar] = list(self.pilotValue.tolist())
         #print('ofdm_data :',len(OFDM_data))
         OFDM_time = self.IDFT(OFDM_data)
         OFDM_withCP = self.addCP(OFDM_time)
