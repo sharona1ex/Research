@@ -127,8 +127,8 @@ class Ofdm:
         #cross validation set
         Feature_cv = Features[int(0.6*m+mr*0.5):int(0.6*m+mr*0.5+mr*0.5)]
         Label_cv = Final_label[int(0.6*m+mr*0.5):int(0.6*m+mr*0.5+mr*0.5)]
-        
         return Feature_train,Label_train,Feature_test,Label_test,Feature_cv,Label_cv
+        #return Feature_train[:,[0,1,2,4]],Label_train[:,0],Feature_test[:,[0,1,2,4]],Label_test[:,0],Feature_cv[:,[0,1,2,4]],Label_cv[:,0]
 
     def channel(self,signal,channelResponse,SNRdb):
         convolved = np.convolve(signal, channelResponse)
@@ -161,7 +161,7 @@ class Ofdm:
 #at 1<k<2 and p=2 works very good and error = 0%
 #at k=3 and p=2 error = 1.1%        
 qam = 4
-K = 2
+K = 3
 CP = K//4
 P = 2
 if P%2 != 0:
@@ -192,22 +192,22 @@ m = 5000 # m mean number of examples
 myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
 [Feature_train,Label_train,Feature_test,Label_test,Feature_cv,Label_cv] = myOfdm.dataGen(m,channel_response,SNRdb)
 
-Label_train = myOfdm.unify_label(Label_train)
-Label_test = myOfdm.unify_label(Label_test)
-Label_cv = myOfdm.unify_label(Label_cv)
+#Label_train = myOfdm.unify_label(Label_train)
+#Label_test = myOfdm.unify_label(Label_test)
+#Label_cv = myOfdm.unify_label(Label_cv)
 ##carrier data separation
 #c1F_train = Feature_train[:,[0,1,2,3]]
 #c1L_train = Label_train[:,0]
 #c1F_test = Feature_test[:,[0,1,2,3]]
 #c1L_test = Label_test[:,0]
-#print(np.shape(c1L_train)," ",np.shape(c1F_train))
+print(np.shape(Label_train)," ",np.shape(Feature_train))
 #
 ## SVM model
-clf = svm.SVC(kernel='rbf',gamma=1,C=5.0)
-clf.fit(Feature_train,Label_train)
+clf = svm.SVC(kernel='rbf',gamma=1.3,C=5.0)
+clf.fit(Feature_train,Label_train[:,0])
 
 pred = clf.predict(Feature_test)
-result_1 = confusion_matrix(Label_test,pred)
+result_1 = confusion_matrix(Label_test[:,0],pred)
 print(result_1)
 [r,c] = np.shape(result_1)
 correct_sum = 0

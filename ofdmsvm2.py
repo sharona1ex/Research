@@ -69,8 +69,11 @@ def removeCP(signal,signalType='message'):
     
 
 def ofdm_simulate(codeword, channelResponse,SNRdb):       
-    OFDM_data = np.zeros(pilotNum, dtype=complex)
+    OFDM_data = np.zeros(pilotNum, dtype=complex)    
     OFDM_data[pilotCar] = pilotValue
+    print(pilotCar," pilotCar")
+    print(pilotValue," pilotValue type: ",type(pilotValue))
+        
     #print('ofdm_data :',len(OFDM_data))
     OFDM_time = IDFT(OFDM_data)
     OFDM_withCP = addCP(OFDM_time)
@@ -118,6 +121,7 @@ Final_label = np.zeros(K)
 #starting from 1 to skip the zeros added at the zeroth index
 for i in range(1,num+1):    
     Label = Modulation(bits1[i])
+    print("type: ",type(Label))
     img = np.imag(Label)
     real = np.real(Label)
     n = len(real)
