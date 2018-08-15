@@ -140,7 +140,7 @@ pilot_mag = pilot_mag.tolist()
 pilot_angle = pilot_angle.tolist()
 bit_mag = np.abs(signal_output[1:]).tolist()
 bit_angle = np.angle(signal_output[1:]).tolist()
-print(len(pilot + pilot_mag[0] + pilot_angle[0] + bit_mag[0] + bit_angle[0]))
+print(len(pilot_mag[0] + pilot_angle[0] + bit_mag[0] + bit_angle[0]))
 Features = np.zeros(P + K*mu)    
 
 for i in range(num):
