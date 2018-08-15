@@ -104,16 +104,18 @@ signal_output = np.zeros(K)
 clf = svm.SVC(kernel = 'rbf',gamma = 0.01,C=5)
 num = 5000
 #channel_response_set_test2[np.random.randint(0,len(channel_response_set_test2))]
-for i in range(0,num+1):    
+for i in range(0,num):    
     bitset = np.random.binomial(n=1, p=0.5, size=(payloadBits_per_OFDM, ))
     dpilot,signal,para = ofdm_simulate(bitset,channel_response[np.random.randint(0,len(channel_response))],SNRdb)   
     dist_pilot = np.vstack((dist_pilot,dpilot))
 #    dist_pilot = np.vstack((dist_pilot,pilotValue - dpilot))
     bits1 = np.vstack((bits1,bitset)) # 160bits + 80 pilots = 240 bits
     signal_output = np.vstack((signal_output,signal)) #80 (2bits) + 40 pilotValues = 120 (2bits) of data
-    
+
+
 Final_label = np.zeros(K)
 
+#starting from 1 to skip the zeros added at the zeroth index
 for i in range(1,num+1):    
     Label = Modulation(bits1[i])
     img = np.imag(Label)
