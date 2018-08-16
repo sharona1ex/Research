@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Aug 15 09:06:58 2018
+Created on Thu Aug 16 19:02:07 2018
 
-@author: SHARON ALEXANDER
+@author: SHALOM ALEXANDER
 """
 import numpy as np
 from math import log10
-from sklearn import svm
-from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
 
 class Ofdm:
     
@@ -154,124 +150,3 @@ class Ofdm:
     @staticmethod
     def IDFT(OFDM_data):
         return np.fft.ifft(OFDM_data)
-    
-        
-
-class multi_svm:
-    
-    def __init__(self,K,Kernel,Gamma,c):
-        self.clf_arr = []
-        for i in range(K):
-            self.clf_arr.append(svm.SVC(kernel = Kernel,gamma = Gamma,C = c))
-    
-    def train(self,Feature,Label):
-        i = 0
-        for clf in self.clf_arr:
-            clf.fit(Feature,Label[:,i])
-            i = i + 1
-            
-    def predict(self,Feature,Label):
-        i = 0
-        net_av_error = 0
-        av_error = []
-        for clf in self.clf_arr:
-            pred = clf.predict(Feature)
-            mat = confusion_matrix(Label[:,i],pred)
-            num_of_examples = len(Feature)
-            av_error.append((num_of_examples - sum([mat[i][i] for i in range(len(mat))]))/num_of_examples)
-            i = i + 1
-        net_av_error = sum(av_error)
-        return net_av_error,av_error
-            
-
-        
-        
-
-
-
-        
-
-#ofdm parameter setting       
-qam = 4
-K = 3
-CP = K//4
-P = 2
-if P%2 != 0:
-    P = P + 1 
-
-complex_map = {
-        (-1.,-1.):0,
-        (-1., 1.):1,
-        ( 1.,-1.):2,
-        ( 1., 1.):3    
-        }
-
-mod_map = {
-        (0,0):-1.0 - 1.0j,
-        (0,1):-1.0 + 1.0j,
-        (1,0): 1.0 - 1.0j,
-        (1,1): 1.0 + 1.0j
-        }       
-
-# channel settings
-SNRdb = 25
-channel_response = np.array([[0.3+0.3j,0,1],[1, 0, 0.3+0.3j],[4, 0, 0.2+6j]])
-
-#Amount of data
-m = 5000 # m mean number of examples
-
-#Ofdm object and data creation
-print("Data Creation...")
-myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
-[Feature_train,Label_train,Feature_test,Label_test,Feature_cv,Label_cv] = myOfdm.dataGen(m,channel_response,SNRdb)
-
-#print(np.shape(Label_train)," ",np.shape(Feature_train))
-#SVM parameters
-Kernel = 'rbf'
-#Gamma = [0.001,0.01,0.1,1.0,1.2,1.3,1.5,1.8,2.0,2.3,2.5,2.8,3.0]
-Gamma = 0.1
-#c = [0.5,1.0,1.5,1.8,2,3,4,5,5.5,6,6.5,7]
-c = 7
-#Carrier_error = []
-#Total_error = []
-
-# best gamma is 0.1
-# best C is 7
-
-# SVM model
-print("Creating SVM models for each carrier...")
-mySVM = multi_svm(K,Kernel,Gamma,c)
-print("Training models...")
-mySVM.train(Feature_train,Label_train)
-print("Signal Reconstrucion test...")
-[Total_average_test_error, Average_test_error_of_individual_carrier] = mySVM.predict(Feature_test,Label_test)
-print("Total Average test error:",Total_average_test_error)
-print("Average test error of each carrier:",Average_test_error_of_individual_carrier)
-
-#for g in c:
-#    print(".",end=".")
-#    mySVM = multi_svm(K,Kernel,Gamma,g)
-#    mySVM.train(Feature_train,Label_train)
-#    [Total_average_test_error, Average_test_error_of_individual_carrier] = mySVM.predict(Feature_test,Label_test)
-#    Carrier_error.append(Average_test_error_of_individual_carrier)
-#    Total_error.append(Total_average_test_error)
-#    
-#Carrier_error = np.array(Carrier_error)
-#Carrier_error = Carrier_error.transpose()
-#plotList = []
-#labels = []
-#for i in range(K):
-#    f2 = interp1d(c, Carrier_error[i], kind='cubic')
-#    plotList.append(plt.plot(c,Carrier_error[i],'o', c,f2(c),'--',label = 'Carrier'+str(i)))
-#    labels.append('Carrier' + str(i))
-#    
-#
-#
-#plt.title('Relation of Error Rate with changing C')
-#plt.xlabel('C')
-#plt.ylabel('Error')
-#plt.legend()            
-#plt.show()
-#            
-
-
