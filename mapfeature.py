@@ -19,7 +19,7 @@ def mapfeature(x1,x2,n):
 
 #ofdm parameters
 qam = 4
-K = 3
+K = 2
 CP = K//4
 P = 2
 if P%2 != 0:
@@ -58,15 +58,17 @@ print('ofdm data created.')
 Feature = np.vstack((Feature_train,Feature_test,Feature_cv))
 Label = np.vstack((Label_train,Label_test,Label_cv))
 
-np.save('Labelk3.npy',Label)
-np.save('Featurek3.npy',Feature)
-print('Feature data saved to Featurek3.npy & Labelk3.npy.')
+nameF = 'Featurek' + str(K) + '.npy'
+nameL = 'Labelk' + str(K) + '.npy'
+np.save(nameL,Label)
+np.save(nameF,Feature)
+print('Feature data saved to Featurek%d.npy & Labelk%d.npy.'% (K,K))
 print('Feature data integrated.')
 
 #Feature data segregation
-Feature_pilot = Feature[:,[0,1]]
-Feature_mag = Feature[:,[2,3,4]]
-Feature_ang = Feature[:,[5,6,7]]
+Feature_pilot = Feature[:,[i for i in range(P)]]
+Feature_mag = Feature[:,[j for j in range(2,2 + K)]]
+Feature_ang = Feature[:,[k for k in range(2 + K, 2 + 2*K)]]
 print('Feature data segregrated.')
 
 #polynomial formation

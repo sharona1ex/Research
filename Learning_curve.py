@@ -59,7 +59,6 @@ print('\nCalculated learning curve for training set.')
 print('Calculating learning curve for test set.')
 for i in range(200,len(Feature_test),5):
     print('.',end="")
-    clf.train(Feature_test[0:i,:],Label_test[0:i,:])
     [err,_] = clf.predict(Feature_test[0:i,:],Label_test[0:i,:])
     test_error.append(err)
 print('\nCalculated learning curve for test set.')

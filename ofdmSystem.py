@@ -10,6 +10,7 @@ from sklearn import svm
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+import data 
 
 class Ofdm:
     
@@ -193,7 +194,7 @@ class multi_svm:
 
 #ofdm parameter setting       
 qam = 4
-K = 3
+K = 2
 CP = K//4
 P = 2
 if P%2 != 0:
@@ -221,10 +222,17 @@ channel_response = np.array([[0.3+0.3j,0,1],[1, 0, 0.3+0.3j],[4, 0, 0.2+6j]])
 m = 5000 # m mean number of examples
 
 #Ofdm object and data creation
-print("Data Creation...")
-myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
-[Feature_train,Label_train,Feature_test,Label_test,Feature_cv,Label_cv] = myOfdm.dataGen(m,channel_response,SNRdb)
 
+myOfdm = Ofdm(K,P,qam,complex_map,mod_map)
+#[Feature_train,Label_train,Feature_test,Label_test,Feature_cv,Label_cv] = myOfdm.dataGen(m,channel_response,SNRdb)
+#print("Data Creation...")
+nameF = 'Featurek' + str(K) + '.npy'
+nameL = 'Labelk' + str(K) + '.npy'
+Features = np.load(nameF)
+Labels = np.load(nameL)
+[Feature_train,Feature_test,Feature_cv] = data.feature_split(Features)
+[Label_train,Label_test,Label_cv] = data.feature_split(Labels)
+print('Data Loaded.')
 #print(np.shape(Label_train)," ",np.shape(Feature_train))
 #SVM parameters
 Kernel = 'rbf'
@@ -247,6 +255,9 @@ print("Signal Reconstrucion test...")
 [Total_average_test_error, Average_test_error_of_individual_carrier] = mySVM.predict(Feature_test,Label_test)
 print("Total Average test error:",Total_average_test_error)
 print("Average test error of each carrier:",Average_test_error_of_individual_carrier)
+[Total_average_test_error, Average_test_error_of_individual_carrier] = mySVM.predict(Feature_cv,Label_cv)
+print("Total Average test error on cv:",Total_average_test_error)
+print("Average test error of each carrier on cv:",Average_test_error_of_individual_carrier)
 
 #for g in c:
 #    print(".",end=".")
