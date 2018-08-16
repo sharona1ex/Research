@@ -16,10 +16,7 @@ def mapfeature(x1,x2,n):
             out = np.vstack((out,x1**(i-j)*x2**(j)))
     return out[1:].transpose()
 
-#SVM parameters
-Kernel = 'rbf'
-Gamma = 0.1
-c = 7
+
 #ofdm parameters
 qam = 4
 K = 3
